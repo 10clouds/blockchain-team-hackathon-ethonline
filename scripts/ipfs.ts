@@ -1,48 +1,40 @@
-import ipfsClient from 'ipfs-http-client';
+import { File, Web3Storage, getFilesFromPath } from 'web3.storage'
 
-const projectId =
-  process.env.IPFS_PROJECT_ID !== undefined
-    ? process.env.IPFS_PROJECT_ID
-    : '1zPRnySCqLoxlmzKBs0RBh4hUif';
-const projectSecret =
-  process.env.IPFS_PROJECT_SECRET !== undefined
-    ? process.env.IPFS_PROJECT_SECRET
-    : '2acaf522ec503e283226c1fc20b35be8';
-
-let auth;
-if (process.env.IPFS === 'infura')
-  auth =
-    'Basic ' + Buffer.from(projectId + ':' + projectSecret).toString('base64');
-else auth = process.env.IPFS_AUTH;
-
-const client = ipfsClient.create({
-  host:
-    process.env.IPFS === 'infura' ? 'ipfs.infura.io' : process.env.IPFS_HOST,
-  port: process.env.IPFS === 'infura' ? 5001 : process.env.IPFS_PORT,
-  protocol: process.env.IPFS === 'local' ? 'http' : 'https',
-  headers: {
-    authorization: auth,
-  },
-});
-
-async function addFileAndPin(filePath) {
-  console.log(await client.isOnline());
-  let hash;
-  await client.add(filePath).then(res => {
-    hash = res.path;
-    client.pin.add(res.cid).then();
-  });
-  return hash;
+function makeStorageClient () {
+  return new Web3Storage({ token: process.env.WEB3_STORAGE!! })
 }
 
-client.addFileAndPin = addFileAndPin;
-client.remove = client.pin.rm;
+function makeFileObjects (relationshipId: string){
+  /// TODO: how metadata should like
+  const obj = { realtionshipId: relationshipId, tier: 1 }
+  const buffer = Buffer.from(JSON.stringify(obj))
 
-client.addFileAndPin('/app/metadata/2.json').then(result => {
-  console.log(result);
-  client.remove(result).then(res => console.log('removed: ', res));
+  const files = [
+    new File([buffer], 'metadata.json')
+  ]
+  return files
+}
+
+async function storeFiles (relationshipId: string) {
+  let metadata = makeFileObjects(relationshipId)
+  const client = makeStorageClient()
+  const file = await getFilesFromPath("scripts/padlock.jpg")
+
+  const cid_metadata = await client.put(metadata)
+  const cid_jpg = await client.put(file)
+  
+  console.log('Metadata files with cid:', cid_metadata)
+  console.log('Padlock tier:1 with cid:', cid_jpg)
+
+  console.log("Metadata IPFS: ", `https://${cid_metadata}.ipfs.dweb.link/metadata.json`)
+  console.log("Padlock IPFS: ", `https://${cid_jpg}.ipfs.w3s.link/padlock.jpg`)
+}
+
+async function main() {
+  await storeFiles('test1');
+}
+
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
 });
-
-module.exports = {
-  ipfsClient: client,
-};

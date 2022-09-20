@@ -12,6 +12,8 @@ import {
     ERC1155NFT,
     WETHMock__factory,
     WETHMock,
+    IncentivesMock__factory,
+    IncentivesMock,
     PoolProviderMock__factory,
     PoolProviderMock,
     PoolMock__factory,
@@ -26,22 +28,24 @@ describe("Padlock", function () {
     let deployer: SignerWithAddress;
     let bob: SignerWithAddress;
     let alice: SignerWithAddress;
-    let executor: SignerWithAddress;
 
     let padlock: PadLock;
     let minimalFee = parseEther("0.001");
     let erc1155: ERC1155NFT;
 
     let wethMock: WETHMock;
+    let incentivesMock: IncentivesMock;
     let poolProviderMock: PoolProviderMock;
     let poolMock: PoolMock;
     let poolDataProviderMock: PoolDataProviderMock;
     let rewardsStub: RewardsControllerStub;
+    let initialBalance: BigNumber;
 
     beforeEach(async () => {
         [deployer, bob, alice] = await ethers.getSigners();
 
         wethMock = await new WETHMock__factory(deployer).deploy();
+        incentivesMock = await new IncentivesMock__factory(deployer).deploy();
         poolProviderMock = await new PoolProviderMock__factory(deployer).deploy();
         poolDataProviderMock = await new PoolDataProviderMock__factory(deployer).deploy();
         poolMock = await new PoolMock__factory(deployer).deploy(poolDataProviderMock.address);
@@ -52,6 +56,7 @@ describe("Padlock", function () {
 
         padlock = await new PadLock__factory(deployer).deploy(
             wethMock.address,
+            incentivesMock.address,
             minimalFee,
             poolProviderMock.address,
             rewardsStub.address,
@@ -59,17 +64,18 @@ describe("Padlock", function () {
 
         erc1155 = new ERC1155NFT__factory(deployer).attach(await padlock.erc1155());
 
-        await wethMock.transfer(alice.address, ethers.utils.parseEther("1"));
-        await wethMock.transfer(bob.address, ethers.utils.parseEther("1"));
+        initialBalance = parseEther("10");
 
-        await wethMock.connect(alice).approve(padlock.address, ethers.utils.parseEther("1"));
-        await wethMock.connect(bob).approve(padlock.address, ethers.utils.parseEther("1"));
+        await wethMock.transfer(alice.address, initialBalance);
+        await wethMock.transfer(bob.address, initialBalance);
+
+        await wethMock.connect(alice).approve(padlock.address, initialBalance);
+        await wethMock.connect(bob).approve(padlock.address, initialBalance);
     });
 
     it("Should allow to proposeRelationship", async () => {
-        expect(await proposeRelationship("1"))
-            .to.emit(padlock, "RelationshipSubmitted")
-            .withArgs(0, bob.address, alice.address);
+        expect(await padlock.connect(bob).proposeRelationship(alice.address, parseEther("1")))
+        .to.emit(padlock, "RelationshipProposed");
     });
 
     it("Should allow to approveRelationship", async () => {
@@ -108,13 +114,28 @@ describe("Padlock", function () {
 
         await padlock.connect(alice).proposeBreakUp();
         expect(await padlock.connect(bob).approveBreakUp())
-            .to.emit(padlock, "BreakUp")
+            .to.emit(padlock, "BreakupApproved")
             .withArgs(relationshipId, alice.address, bob.address);
-        expect(await wethMock.balanceOf(alice.address)).to.be.eq(ethers.utils.parseEther("1"));
-        expect(await wethMock.balanceOf(bob.address)).to.be.eq(ethers.utils.parseEther("1"));
+
+        expect(await wethMock.balanceOf(alice.address)).to.be.eq(initialBalance);
+        expect(await wethMock.balanceOf(bob.address)).to.be.eq(initialBalance);
     });
 
-    it("Should deposit funds to vault", async () => {
+    it("Should allow to re-establish relationship", async () => {
+        let relationshipId = await proposeRelationship("1");
+        await padlock.connect(alice).approveRelationship(relationshipId);
+
+        await erc1155.connect(alice).setApprovalForAll(padlock.address, true);
+        await erc1155.connect(bob).setApprovalForAll(padlock.address, true);
+
+        await padlock.connect(alice).proposeBreakUp();
+        await padlock.connect(bob).approveBreakUp();
+
+        relationshipId = await proposeRelationship("1");
+        await padlock.connect(alice).approveRelationship(relationshipId);
+    });
+
+    it("Should return funds to lovers when approve break up", async () => {
         const relationshipId = await proposeRelationship("1");
         await padlock.connect(alice).approveRelationship(relationshipId);
 
@@ -123,7 +144,7 @@ describe("Padlock", function () {
 
         await padlock.connect(alice).proposeBreakUp();
         expect(await padlock.connect(bob).approveBreakUp())
-            .to.emit(padlock, "Brep")
+            .to.emit(padlock, "BreakupApproved")
             .withArgs(relationshipId, alice.address, bob.address);
     });
 
@@ -138,8 +159,11 @@ describe("Padlock", function () {
 
         await padlock.connect(alice).slashBrakeUp();
 
-        expect(await wethMock.balanceOf(alice.address)).to.be.eq(ethers.utils.parseEther("0.76"));
-        expect(await wethMock.balanceOf(bob.address)).to.be.eq(ethers.utils.parseEther("1.14"));
+        let expectedAliceBalance = initialBalance.sub(parseEther("0.2"));
+        let expectedBobBalance = initialBalance.add(parseEther("0.2"));
+
+        expect(await wethMock.balanceOf(alice.address)).to.be.eq(expectedAliceBalance);
+        expect(await wethMock.balanceOf(bob.address)).to.be.eq(expectedBobBalance);
     });
 
     async function proposeRelationship(fee: string) {
