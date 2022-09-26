@@ -54,7 +54,7 @@ export const DashboardLayout = () => {
             </div>
           </div>
         </header>
-        <div className="bg-neutral-100 h-full">
+        <div className="bg-neutral-100 h-full flex flex-col justify-center items-center text-neutral-800">
           <Outlet />
         </div>
       </main>
