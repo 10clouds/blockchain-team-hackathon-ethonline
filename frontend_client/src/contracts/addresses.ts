@@ -1,0 +1,8 @@
+// Optimism Goerli addresses
+export const addresses = {
+  padlock: "0x38BBF60b8BB3CaC1cC685E9D69Ecb744FA9B2cA7",
+  vaultFactory: "0x4CB7368884bC7d6090DBfcD7c9Ff599A88A1ab81",
+  ERC721NFT: "0xf7b94e440634b2E5bc78A24C013C2ceC7d314924",
+  ERC1155NFT: "0x4925032FF99cAc2ceED53b6Ac8fcC943c1Bd5Cbe",
+  WETH: "0x09bADef78f92F20fd5f7a402dbb1d25d4901aAb2"
+};
