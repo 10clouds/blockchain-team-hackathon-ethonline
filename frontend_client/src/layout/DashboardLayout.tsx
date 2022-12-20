@@ -9,9 +9,9 @@ import { Logo } from "../atoms/Logo/Logo";
 
 export const DashboardLayout = () => {
   return (
-    <div className="bg-gradient-to-r from-[#33459d] to-[#cb391c]">
+    <div className="bg-gradient-to-br from-indigo-700 to-red-700">
       <div className="max-w-screen-2xl px-20 pb-11 pt-4 min-h-screen mx-auto my-0">
-        <div className="flex text-neutral-50 min-h-screen shadow-lg">
+        <div className="flex text-neutral-50 min-h-screen shadow-3xl">
           <nav className="static flex flex-col px-12 bg-neutral-800 py-10">
             <Logo />
             <ul className="mt-32">

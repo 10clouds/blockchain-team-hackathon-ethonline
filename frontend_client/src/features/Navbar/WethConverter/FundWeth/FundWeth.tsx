@@ -93,7 +93,7 @@ export const FundWeth = () => {
             type="number"
             name="eth"
             placeholder="0.00"
-            className="w-1/2 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
+            className="w-28 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
             onChange={(e) => setSwapAmount(+e.target.value)}
             max={ethBalanceFormatted}
             min={0}
@@ -119,7 +119,7 @@ export const FundWeth = () => {
             type="number"
             name="eth"
             placeholder="0.00"
-            className="w-1/2 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
+            className="w-28 rounded-lg border-transparent flex-1 appearance-none border border-gray-300 py-2 px-4 bg-white text-gray-700 placeholder-gray-400 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
             onChange={(e) => setApproveAmount(+e.target.value)}
             max={ethBalanceFormatted}
             min={0}

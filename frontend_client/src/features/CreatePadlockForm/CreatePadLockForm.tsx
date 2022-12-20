@@ -32,27 +32,28 @@ export const CreatePadlockForm = () => {
   });
 
   useEffect(() => {
-    if (proposeRelationshipState.errorMessage) {
-      toast.error(proposeRelationshipState.errorMessage);
-    }
-
     if (approveWethState.errorMessage) {
       toast.error(proposeRelationshipState.errorMessage);
+      approveWethResetState();
     }
 
     if (approveWethState.status === "Success") {
       toast.success(`Your approval of ${initialDeposit} WETH was successful!`);
+      approveWethResetState();
+    }
+
+    if (proposeRelationshipState.errorMessage) {
+      toast.error(proposeRelationshipState.errorMessage);
+      proposeRelationshipResetState();
     }
 
     if (proposeRelationshipState.status === "Success") {
       toast.success(
         `Relationship was successfuly proposed to address ${address}`
       );
-    }
-    const id = setTimeout(() => {
+      proposeRelationshipResetState();
       clearData();
-    }, 5000);
-    return () => clearInterval(id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     proposeRelationshipState.errorMessage,
@@ -62,12 +63,12 @@ export const CreatePadlockForm = () => {
   ]);
 
   const proposeRelationship = async () => {
-    await approveWethSend(
+    const approveWethSendTx = await approveWethSend(
       addresses.padlock,
       utils.parseEther(initialDeposit.toString())
     );
 
-    if (approveWethState.status === "Success") {
+    if (approveWethSendTx) {
       await proposeRelationshipSend(
         address,
         utils.parseEther(initialDeposit.toString())
@@ -78,9 +79,6 @@ export const CreatePadlockForm = () => {
   const clearData = () => {
     setInitialDeposit(0);
     setAddress("");
-    [approveWethResetState, proposeRelationshipResetState].forEach((fn) =>
-      fn()
-    );
   };
 
   return (
@@ -100,7 +98,9 @@ export const CreatePadlockForm = () => {
             onChange={(e) => setAddress(e.target.value)}
           />
           <div className="text-red-600 text-sm mt-2 pl-1">
-            {address && !isAddress(address) ? "Please put valid address" : ""}
+            {(address && !isAddress(address)) || account === address
+              ? "Please put valid address"
+              : ""}
           </div>
         </div>
         <div className="flex flex-col mb-2">
@@ -125,21 +125,20 @@ export const CreatePadlockForm = () => {
 
         <div className="flex w-full my-4">
           <button
-            type="submit"
+            type="button"
             className="py-2 px-4 disabled:bg-red-300 disabled:text-gray-100 bg-red-600 hover:bg-red-700 focus:ring-red-500 focus:ring-offset-red-200 text-white w-full transition ease-in duration-200 text-center text-base font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-lg "
             disabled={
               initialDeposit === 0 ||
               address === "" ||
-              proposeRelationshipState.status !== "None"
+              proposeRelationshipState.status !== "None" ||
+              approveWethState.status !== "None"
             }
-            onClick={(e) => {
-              e.preventDefault();
-              proposeRelationship();
-            }}
+            onClick={proposeRelationship}
           >
-            {proposeRelationshipState.status === "None"
+            {proposeRelationshipState.status === "None" ||
+            approveWethState.status === "None"
               ? "Send"
-              : proposeRelationshipState.status}
+              : proposeRelationshipState.status || approveWethState.status}
           </button>
         </div>
         <div className="flex justify-center">

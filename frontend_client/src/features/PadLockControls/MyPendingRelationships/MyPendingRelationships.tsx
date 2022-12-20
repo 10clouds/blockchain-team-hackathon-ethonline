@@ -55,11 +55,8 @@ export const MyPendingRelationships = () => {
   useEffect(() => {
     if (state.errorMessage) {
       toast.error(state.errorMessage);
-    }
-    const id = setTimeout(() => {
       resetState();
-    }, 5000);
-    return () => clearInterval(id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.errorMessage, state.status]);
 
@@ -72,18 +69,18 @@ export const MyPendingRelationships = () => {
       {!pendingRelationships.firstHalf.length &&
       !pendingRelationships.secondHalf.length ? (
         <div>
-          Currently not in a relationship.{" "}
+          You haven't got any pending relationships to approve.{" "}
           <button
             className="underline hover:text-red-600 transition"
             onClick={() => navigate("/propose")}
           >
-            Propose
+            Send
           </button>{" "}
-          a relationship.
+          a proposal.
         </div>
       ) : (
         <div className="flex flex-col items-start">
-          {pendingRelationships.firstHalf.length && (
+          {Boolean(pendingRelationships.firstHalf.length) && (
             <div className="mb-4">
               <div className="text-xl mb-5">Sent proposals</div>
               <ul>
@@ -96,7 +93,7 @@ export const MyPendingRelationships = () => {
               </ul>
             </div>
           )}
-          {pendingRelationships.secondHalf.length && (
+          {Boolean(pendingRelationships.secondHalf.length) && (
             <div>
               <div className="text-xl mb-5">Received proposals</div>
               <ul>

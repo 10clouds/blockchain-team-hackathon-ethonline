@@ -1,9 +1,18 @@
-interface ButtonProps {
-  onClick: () => void;
-  children: React.ReactNode;
-  variant?: "primary" | "secondaryFull" | "secondaryGhost" | "tertiary";
-  className?: string;
-}
+import {
+  type ButtonHTMLAttributes,
+  type DetailedHTMLProps,
+  type PropsWithChildren
+} from "react";
+
+type ButtonProps = PropsWithChildren &
+  DetailedHTMLProps<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    HTMLButtonElement
+  > & {
+    onClick: () => void;
+    variant?: "primary" | "secondaryFull" | "secondaryGhost" | "tertiary";
+    className?: string;
+  };
 
 const variants = {
   primary:
@@ -20,13 +29,15 @@ export const Button: React.FunctionComponent<ButtonProps> = ({
   onClick,
   children,
   variant = "primary",
-  className = ""
+  className = "",
+  ...props
 }) => {
   return (
     <button
       type="button"
       className={`rounded-[30px] px-10 py-2.5 text-sm font-medium ${variants[variant]} ${className}`}
       onClick={onClick}
+      {...props}
     >
       {children}
     </button>
