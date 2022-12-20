@@ -1,4 +1,5 @@
 export type Relationship = {
+  __typename: string;
   id: string;
   relationshipId: string;
   firstHalf: string;
@@ -9,6 +10,7 @@ export type Relationship = {
 };
 
 export type BreakupProposal = {
+  __typename: string;
   id: string;
   relationshipId: string;
   initiator: string;

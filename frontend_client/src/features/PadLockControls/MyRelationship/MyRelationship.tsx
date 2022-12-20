@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useCall, useEthers, useContractFunction } from "@usedapp/core";
 import { gql, useQuery } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 import { Spinner } from "../../../atoms/Spinner/Spinner";
 import { Relationship, BreakupProposal } from "../../../types/interfaces";
@@ -11,9 +12,11 @@ import {
   daysSinceRelationshipStarted
 } from "../../../utils/dateUtils";
 import { ERC721 } from "../../../contracts/ERC721";
-import { Button } from "../../../atoms/Button/Button";
 import { PadLock } from "../../../contracts/PadLock";
-import { toast } from "react-toastify";
+import { ERC1155 } from "../../../contracts/ERC1155";
+import { Button } from "../../../atoms/Button/Button";
+import { addresses } from "../../../contracts/addresses";
+import { Snackbar } from "../../../atoms/Snackbar/Snackbar";
 
 const GetRelationshipApproved = gql`
   query GetRelationshipApproved($account: String!) {
@@ -94,13 +97,33 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
     state: approveBreakupState,
     send: approveBreakupSend,
     resetState: approveBreakupResetState
-  } = useContractFunction(PadLock, "approveBreakup", {
+  } = useContractFunction(PadLock, "approveBreakUp", {
     transactionName: "Approve breakup"
   });
 
-  const proposeBreakup = () => proposeBreakupSend();
+  const {
+    state: approveERC1155State,
+    send: approveERC1155Send,
+    resetState: approveERC1155ResetState
+  } = useContractFunction(ERC1155, "setApprovalForAll", {
+    transactionName: "ERC1155 Approval"
+  });
 
-  const approveBreakup = () => approveBreakupSend();
+  const proposeBreakup = async () => {
+    const approveERC1155Tx = await approveERC1155Send(addresses.padlock, true);
+    if (approveERC1155Tx) {
+      proposeBreakupSend();
+    }
+  };
+
+  const approveBreakup = async () => {
+    const approveERC1155Tx = await approveERC1155Send(addresses.padlock, true);
+    console.log(approveERC1155Tx);
+
+    if (approveERC1155Tx) {
+      approveBreakupSend();
+    }
+  };
 
   useEffect(() => {
     if (proposeBreakupState.errorMessage) {
@@ -113,22 +136,36 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
       approveBreakupResetState();
     }
 
+    if (approveERC1155State.errorMessage) {
+      toast.error(approveERC1155State.errorMessage);
+      approveERC1155ResetState();
+    }
+
     if (proposeBreakupState.status === "Success") {
       toast.success("Breakup has been successfully proposed");
       proposeBreakupResetState();
     }
 
     if (approveBreakupState.status === "Success") {
-      toast.success("Breakup has approved");
+      toast.success("Breakup has been successfully approved");
       proposeBreakupResetState();
     }
+
+    if (approveERC1155State.status === "Success") {
+      toast.success("ERC1155 approval granted");
+      approveERC1155ResetState();
+    }
+
+    console.log(approveERC1155State);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     proposeBreakupState.status,
     proposeBreakupState.errorMessage,
     approveBreakupState.status,
-    approveBreakupState.errorMessage
+    approveBreakupState.errorMessage,
+    approveERC1155State.status,
+    approveERC1155State.errorMessage
   ]);
 
   useEffect(() => {
@@ -143,8 +180,8 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
   useEffect(() => {
     if (!relationshipProposedData) return;
 
-    if (relationshipProposedData.length) {
-      setBreakupProposal(relationshipProposedData[0]);
+    if (relationshipProposedData.breakupProposals.length) {
+      setBreakupProposal(relationshipProposedData.breakupProposals[0]);
     }
   }, [relationshipProposedData]);
 
@@ -201,14 +238,25 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
               {breakupProposal ? (
                 <Button
                   onClick={
-                    breakupProposal.initiator === account
+                    breakupProposal.initiator.toLowerCase() ===
+                    account?.toLowerCase()
                       ? () => {}
                       : () => approveBreakup()
                   }
-                  disabled={breakupProposal.initiator === account}
+                  disabled={
+                    breakupProposal.initiator.toLowerCase() ===
+                    account?.toLowerCase()
+                  }
                   variant="tertiary"
+                  className={
+                    breakupProposal.initiator.toLowerCase() ===
+                    account?.toLowerCase()
+                      ? "bg-slate-500 hover:bg-slate-600"
+                      : ""
+                  }
                 >
-                  {breakupProposal.initiator === account
+                  {breakupProposal.initiator.toLowerCase() ===
+                  account?.toLowerCase()
                     ? "Awaiting approval"
                     : "Approve breakup"}
                 </Button>
@@ -221,6 +269,7 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
           </div>
         </div>
       )}
+      <Snackbar />
     </div>
   );
 };
