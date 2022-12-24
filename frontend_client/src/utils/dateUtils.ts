@@ -13,11 +13,11 @@ export const daysSinceRelationshipStarted = (unix: string) => {
   let message;
 
   if (days === 0) {
-    message = "less than a day together!";
+    message = "less than a day";
   } else if (days === 1) {
-    message = "1 day together!";
+    message = "1 day";
   } else {
-    message = `${days} days together!`;
+    message = `${days} days`;
   }
   return message;
 };

@@ -4,7 +4,7 @@ import { gql, useQuery } from "@apollo/client";
 import { useEthers, useContractFunction } from "@usedapp/core";
 
 import { Spinner } from "../../../atoms/Spinner/Spinner";
-import { RelationshipsData } from "../../../types/interfaces";
+import { RelationshipsData } from "../../../types/types";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../atoms/Button/Button";
 import { PadLock } from "../../../contracts/PadLock";

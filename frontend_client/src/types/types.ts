@@ -9,6 +9,11 @@ export type Relationship = {
   NFTFraction: string;
 };
 
+export type RelationshipsData = {
+  firstHalf: Relationship[];
+  secondHalf: Relationship[];
+};
+
 export type BreakupProposal = {
   __typename: string;
   id: string;
@@ -16,7 +21,15 @@ export type BreakupProposal = {
   initiator: string;
 };
 
-export type RelationshipsData = {
-  firstHalf: Relationship[];
-  secondHalf: Relationship[];
+export type BreakupApproved = {
+  __typename: string;
+  id: string;
+  relationshipId: string;
+};
+
+export type RelationshipApproved = {
+  __typename: string;
+  id: string;
+  relationshipId: string;
+  startedAt: string;
 };

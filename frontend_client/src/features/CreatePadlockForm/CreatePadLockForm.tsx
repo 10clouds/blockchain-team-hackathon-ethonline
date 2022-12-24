@@ -83,7 +83,7 @@ export const CreatePadlockForm = () => {
 
   return (
     <div className="flex flex-col max-w-md px-4 py-8 rounded-lg shadowpx-8">
-      <h1 className="text-2xl mb-8">Propose a relationship</h1>
+      <div className="text-2xl mb-6">Propose a relationship</div>
       <form action="#" className="w-[300px]">
         <div className="flex flex-col mb-6">
           <label htmlFor="proposee-address" className="mb-2 pl-1 text-sm">

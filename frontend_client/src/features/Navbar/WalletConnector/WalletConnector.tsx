@@ -6,7 +6,11 @@ import { Button } from "../../../atoms/Button/Button";
 export const WalletConnector = () => {
   const { activateBrowserWallet, account, chainId, deactivate } = useEthers();
 
-  if (chainId !== Optimism.chainId && chainId !== OptimismGoerli.chainId) {
+  if (
+    chainId !== Optimism.chainId &&
+    chainId !== OptimismGoerli.chainId &&
+    account
+  ) {
     return (
       <div className="font-bold underline">
         Please use either Optimism Mainnet or Optimism Goerli testnet.

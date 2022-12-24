@@ -1,31 +1,18 @@
 import { useState } from "react";
 
-import { useCall, useEthers } from "@usedapp/core";
+import { useEthers } from "@usedapp/core";
 
-import { PadLock } from "../contracts/PadLock";
 import { MyRelationship } from "../features/PadLockControls/MyRelationship/MyRelationship";
 import { MyPendingRelationships } from "../features/PadLockControls/MyPendingRelationships/MyPendingRelationships";
 import { Button } from "../atoms/Button/Button";
-import { Spinner } from "../atoms/Spinner/Spinner";
 
 export const Padlock = () => {
   const [currentView, setCurrentView] = useState("active");
 
   const { account } = useEthers();
 
-  const { value } =
-    useCall({
-      contract: PadLock,
-      method: "loverToRelationshipId",
-      args: [account]
-    }) ?? {};
-
   if (!account) {
     return <p>Please connect your account first</p>;
-  }
-
-  if (!value) {
-    return <Spinner />;
   }
 
   return (

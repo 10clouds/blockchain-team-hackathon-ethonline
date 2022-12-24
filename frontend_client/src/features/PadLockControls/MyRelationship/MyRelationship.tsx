@@ -6,7 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import { Spinner } from "../../../atoms/Spinner/Spinner";
-import { Relationship, BreakupProposal } from "../../../types/interfaces";
+import {
+  Relationship,
+  BreakupProposal,
+  BreakupApproved
+} from "../../../types/types";
 import {
   unixToDate,
   daysSinceRelationshipStarted
@@ -51,9 +55,18 @@ const GetBreakupProposal = gql`
   }
 `;
 
-interface Props {
+const GetApprovedBreakup = gql`
+  query GetBreakupProposal {
+    breakupApproveds {
+      id
+      relationshipId
+    }
+  }
+`;
+
+type Props = {
   setCurrentView: React.Dispatch<React.SetStateAction<string>>;
-}
+};
 
 export const MyRelationship = ({ setCurrentView }: Props) => {
   const [approvedRelationship, setApprovedRelationship] =
@@ -71,12 +84,13 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
     variables: { account }
   });
 
-  const {
-    data: relationshipProposedData,
-    loading: relationshipProposedLoading
-  } = useQuery(GetBreakupProposal, {
-    variables: { relationshipId: approvedRelationship?.relationshipId }
-  });
+  const { data: breakupProposedData, loading: breakupProposedLoading } =
+    useQuery(GetBreakupProposal, {
+      variables: { relationshipId: approvedRelationship?.relationshipId }
+    });
+
+  const { data: breakupApprovedData, loading: breakupApprovedLoading } =
+    useQuery(GetApprovedBreakup);
 
   const { value: erc721Uri } =
     useCall({
@@ -84,6 +98,8 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
       method: "tokenURI",
       args: [approvedRelationship?.NFTPadlock]
     }) ?? {};
+
+  console.log(erc721Uri);
 
   const {
     state: proposeBreakupState,
@@ -118,8 +134,6 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
 
   const approveBreakup = async () => {
     const approveERC1155Tx = await approveERC1155Send(addresses.padlock, true);
-    console.log(approveERC1155Tx);
-
     if (approveERC1155Tx) {
       approveBreakupSend();
     }
@@ -155,9 +169,6 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
       toast.success("ERC1155 approval granted");
       approveERC1155ResetState();
     }
-
-    console.log(approveERC1155State);
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     proposeBreakupState.status,
@@ -169,23 +180,49 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
   ]);
 
   useEffect(() => {
-    if (!relationshipApprovedData) return;
-    const { firstHalf, secondHalf } = relationshipApprovedData;
+    // Check if there is data
+    if (!relationshipApprovedData || !breakupApprovedData) return;
 
-    if (firstHalf.length || secondHalf.length) {
+    const { firstHalf, secondHalf } = relationshipApprovedData;
+    const { breakupApproveds } = breakupApprovedData;
+
+    // Check if there are any approved relationships
+    if (!firstHalf.length && !secondHalf.length) return;
+
+    // Check if there are breakups
+    if (!breakupApproveds.length) {
       setApprovedRelationship(firstHalf[0] || secondHalf[0]);
+      return;
     }
-  }, [relationshipApprovedData]);
+
+    const relationshipApprovedDataFiltered = [
+      ...firstHalf,
+      ...secondHalf
+    ].filter(
+      (d: Relationship) =>
+        !Boolean(
+          breakupApprovedData.breakupApproveds.find(
+            (el: BreakupApproved) => el.relationshipId === d.relationshipId
+          )
+        )
+    );
+
+    setApprovedRelationship(relationshipApprovedDataFiltered[0]);
+  }, [relationshipApprovedData, breakupApprovedData, approvedRelationship]);
 
   useEffect(() => {
-    if (!relationshipProposedData) return;
+    if (!breakupProposedData) return;
 
-    if (relationshipProposedData.breakupProposals.length) {
-      setBreakupProposal(relationshipProposedData.breakupProposals[0]);
+    if (breakupProposedData.breakupProposals.length) {
+      setBreakupProposal(breakupProposedData.breakupProposals[0]);
     }
-  }, [relationshipProposedData]);
+  }, [breakupProposedData]);
 
-  if (relationshipApprovedLoading || relationshipProposedLoading) {
+  if (
+    relationshipApprovedLoading ||
+    breakupProposedLoading ||
+    breakupApprovedLoading
+  ) {
     return <Spinner />;
   }
 
@@ -212,11 +249,17 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
       ) : (
         <div>
           <div className="text-2xl mb-6">My relationship</div>
-          {erc721Uri && (
-            <div className="bg-teal-100 rounded-lg inline-block mb-4">
-              <img src={erc721Uri[0]} className="max-w-xs" alt="Love Padlock" />
-            </div>
-          )}
+          <div className="bg-teal-100 rounded-lg inline-block mb-4">
+            <img
+              src={
+                erc721Uri
+                  ? erc721Uri[0]
+                  : "https://ipfs.io/ipfs/QmYPATF8NR7rj93vB7craXUTvgCyh3zJ5urXDyBbaRRv3C?filename=02-10C-valentines-Lock_green.png"
+              }
+              className="max-w-xs"
+              alt="Love Padlock"
+            />
+          </div>
           <div className="text-lg">
             <div className="mr-4 mb-4">
               <span className="mr-4 font-medium">Created:</span>
