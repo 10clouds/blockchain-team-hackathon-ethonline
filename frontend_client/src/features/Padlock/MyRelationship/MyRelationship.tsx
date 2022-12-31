@@ -73,6 +73,7 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
     useState<Relationship | null>(null);
   const [breakupProposal, setBreakupProposal] =
     useState<BreakupProposal | null>(null);
+  const [NFTPadlockId, setNFTPadlockId] = useState<string | null>(null);
 
   const { account } = useEthers();
   const navigate = useNavigate();
@@ -96,10 +97,15 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
     useCall({
       contract: ERC721,
       method: "tokenURI",
-      args: [approvedRelationship?.NFTPadlock]
+      args: [NFTPadlockId || ""]
     }) ?? {};
 
-  console.log(erc721Uri);
+  const { value: idToRelationship } =
+    useCall({
+      contract: PadLock,
+      method: "idToRelationship",
+      args: [approvedRelationship?.relationshipId || ""]
+    }) ?? {};
 
   const {
     state: proposeBreakupState,
@@ -180,6 +186,14 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
   ]);
 
   useEffect(() => {
+    if (!idToRelationship) return;
+
+    const { NFTPadlock } = idToRelationship;
+
+    setNFTPadlockId(NFTPadlock.toString());
+  }, [idToRelationship]);
+
+  useEffect(() => {
     // Check if there is data
     if (!relationshipApprovedData || !breakupApprovedData) return;
 
@@ -249,16 +263,18 @@ export const MyRelationship = ({ setCurrentView }: Props) => {
       ) : (
         <div>
           <div className="text-2xl mb-6">My relationship</div>
-          <div className="bg-teal-100 rounded-lg inline-block mb-4">
-            <img
-              src={
-                erc721Uri
-                  ? erc721Uri[0]
-                  : "https://ipfs.io/ipfs/QmYPATF8NR7rj93vB7craXUTvgCyh3zJ5urXDyBbaRRv3C?filename=02-10C-valentines-Lock_green.png"
-              }
-              className="max-w-xs"
-              alt="Love Padlock"
-            />
+          <div className="mb-4 inline-block">
+            {NFTPadlockId && erc721Uri ? (
+              <div className="bg-teal-100 rounded-lg">
+                <img
+                  src={erc721Uri[0]}
+                  className="max-w-xs"
+                  alt="Love Padlock"
+                />
+              </div>
+            ) : (
+              <Spinner />
+            )}
           </div>
           <div className="text-lg">
             <div className="mr-4 mb-4">
