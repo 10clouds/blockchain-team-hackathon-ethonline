@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 
 import { gql, useQuery } from "@apollo/client";
 import { useEthers, useContractFunction } from "@usedapp/core";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 import { Spinner } from "../../../atoms/Spinner/Spinner";
 import { RelationshipsData } from "../../../types/types";
-import { useNavigate } from "react-router-dom";
 import { Button } from "../../../atoms/Button/Button";
 import { PadLock } from "../../../contracts/PadLock";
-import { toast } from "react-toastify";
 import { Snackbar } from "../../../atoms/Snackbar/Snackbar";
 
 const GetRelationshipProposed = gql`
@@ -31,6 +31,9 @@ const GetRelationshipProposed = gql`
 export const MyPendingRelationships = () => {
   const [pendingRelationships, setPendingRelationships] =
     useState<RelationshipsData | null>(null);
+  const [approvedRelationshipId, setApprovedRelationshipId] = useState<
+    string | null
+  >(null);
 
   const navigate = useNavigate();
   const { account } = useEthers();
@@ -45,7 +48,10 @@ export const MyPendingRelationships = () => {
     }
   );
 
-  const handleAcceptRelationship = (id: string) => send(id);
+  const handleApproveRelationship = (id: string) => {
+    toast.warn("Make sure to set WETH approval first!");
+    send(id);
+  };
 
   useEffect(() => {
     if (!data) return;
@@ -55,6 +61,11 @@ export const MyPendingRelationships = () => {
   useEffect(() => {
     if (state.errorMessage) {
       toast.error(state.errorMessage);
+      resetState();
+    }
+
+    if (state.status === "Success") {
+      toast.success("Relationship has been approved");
       resetState();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,12 +113,23 @@ export const MyPendingRelationships = () => {
                     <div className="text-red-600 mr-4">{i + 1}.</div>
                     <div className="mr-4">From: {el.firstHalf}</div>
                     <Button
-                      onClick={() =>
-                        handleAcceptRelationship(el.relationshipId)
-                      }
+                      onClick={() => {
+                        handleApproveRelationship(el.relationshipId);
+                        setApprovedRelationshipId(el.relationshipId);
+                      }}
                       variant="tertiary"
+                      disabled={
+                        el.relationshipId === approvedRelationshipId &&
+                        state.status !== "None"
+                      }
+                      className={
+                        el.relationshipId === approvedRelationshipId &&
+                        state.status !== "None"
+                          ? "bg-slate-500 hover:bg-slate-600"
+                          : ""
+                      }
                     >
-                      Accept
+                      Approve
                     </Button>
                   </li>
                 ))}
